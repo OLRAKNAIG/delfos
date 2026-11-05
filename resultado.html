@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Citas | Hospital Lima Este - Vitarte</title>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Enlace a la hoja de estilos externa -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Estilos de las tarjetas de citas (diseño horizontal, escritorio y móvil) -->
+    <style>
+        /* Paleta reducida: grises + un solo acento verde (bloque de citas pendientes) */
+        :root {
+            --c-texto: #1e293b;
+            /* Grises más oscuros para mejor lectura (personas mayores) */
+            --c-suave: #334155;
+            --c-tenue: #475569;
+            --c-borde: #e2e8f0;
+            --c-fondo: #f8fafc;
+            --c-acento: #059669;
+        }
+
+        /* ===== Datos del paciente: mismo ancho que las tarjetas ===== */
+        main.container > .user-card,
+        main.container > .cita-section {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            box-sizing: border-box;
+        }
+
+        main.container > .user-card {
+            border-radius: 12px;
+            margin-top: 18px !important;
+        }
+
+        /* Nombre y DNI en la misma fila */
+        .user-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            column-gap: 12px;
+            row-gap: 2px;
+        }
+
+        .user-card h2 {
+            margin: 0;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .user-row p {
+            margin: 0;
+            font-size: 10px;
+            color: #cbd5e1;
+            white-space: nowrap;
+        }
+
+        .user-row p strong {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        /* ===== Secciones ===== */
+        .cita-section {
+            margin-top: 20px;
+        }
+
+        .cita-section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .cita-section-title h2 {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: var(--c-suave);
+        }
+
+        .cita-section-title .dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--c-tenue);
+            flex-shrink: 0;
+        }
+
+        .cita-section-title .dot.green { background: var(--c-acento); }
+
+        .cita-count {
+            font-size: 9px;
+            font-weight: 500;
+            padding: 1px 7px;
+            border-radius: 999px;
+            white-space: nowrap;
+            background: #f1f5f9;
+            color: var(--c-suave);
+        }
+
+        .cita-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* ===== Tarjeta ===== */
+        .cita-card {
+            display: flex;
+            align-items: stretch;
+            background: #ffffff;
+            border: 1px solid var(--c-borde);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px -8px rgba(15, 23, 42, 0.15);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .cita-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 18px -10px rgba(15, 23, 42, 0.2);
+        }
+
+        /* Bloque lateral */
+        .cita-side {
+            width: 76px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 4px;
+            color: #ffffff;
+        }
+
+        .cita-side.green { background: var(--c-acento); }
+
+        .cita-side svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .cita-side span {
+            font-size: 8px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        /* Contenido */
+        .cita-body {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+        }
+
+        .cita-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .cita-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 3px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 8.5px;
+            font-weight: 500;
+            background: #f1f5f9;
+            color: var(--c-suave);
+        }
+
+        .cita-chip svg { width: 9px; height: 9px; }
+
+        .cita-label {
+            display: block;
+            font-size: 8.5px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--c-tenue);
+        }
+
+        .cita-card.past .cita-label { color: var(--c-tenue); }
+
+        /* El nombre del médico puede ser largo: se permite el salto de línea */
+        .cita-meta .it.medico { white-space: normal; }
+
+        .cita-title {
+            margin: 0;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.3;
+            color: var(--c-texto);
+            text-transform: uppercase;
+        }
+
+        .cita-meta {
+            margin: 3px 0 0;
+            font-size: 10px;
+            font-weight: 400;
+            line-height: 1.7;
+            color: var(--c-suave);
+        }
+
+        .cita-meta strong {
+            font-weight: 500;
+            color: var(--c-suave);
+        }
+
+        .cita-meta .lbl {
+            font-weight: 400;
+            color: var(--c-tenue);
+        }
+
+        .cita-meta .it {
+            white-space: nowrap;
+        }
+
+        /* Fecha y hora: resaltadas solo con tono más oscuro e icono */
+        .cita-meta .hl {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .cita-meta .hl svg {
+            width: 9px;
+            height: 9px;
+            flex-shrink: 0;
+            color: var(--c-tenue);
+        }
+
+        .cita-meta .hl strong {
+            font-weight: 600;
+            color: var(--c-texto);
+        }
+
+        /* Cita pendiente: fecha y hora con borde rojo para llamar la atención */
+        .cita-meta .hl.green {
+            padding: 0 6px;
+            border: 1px solid #ef4444;
+            border-radius: 5px;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.12);
+            animation: citaLatido 2s ease-in-out 1.2s infinite;
+        }
+
+        .cita-meta .hl.green svg { color: #ef4444; }
+
+        @keyframes citaLatido {
+            0%, 100% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.12); }
+            50%      { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.22); }
+        }
+
+        .cita-meta .sep {
+            margin: 0 2px;
+            color: #94a3b8;
+        }
+
+        /* Botón Ver Ticket */
+        .cita-ticket {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 10px;
+            border-radius: 7px;
+            font-family: inherit;
+            font-size: 9.5px;
+            font-weight: 500;
+            cursor: pointer;
+            background: #ffffff;
+            border: 1px solid var(--c-borde);
+            color: var(--c-texto);
+            transition: background 0.2s ease;
+        }
+
+        .cita-ticket:hover { background: #f1f5f9; }
+
+        /* ===== Historial: aspecto gris "bloqueado" ===== */
+        .cita-card.past {
+            background: var(--c-fondo);
+            box-shadow: none;
+        }
+
+        .cita-card.past:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .cita-side.past { background: #e2e8f0; color: var(--c-tenue); }
+        .cita-card.past .cita-title,
+        .cita-card.past .cita-meta strong,
+        .cita-card.past .cita-meta .hl strong,
+        .cita-card.past .cita-ticket { color: var(--c-tenue); }
+        .cita-card.past .cita-ticket { background: transparent; }
+
+        /* Aviso de Triaje (queda fijo al hacer scroll) */
+        .cita-note {
+            position: sticky;
+            top: 8px;
+            z-index: 30;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            margin: 16px 0 0;
+            padding: 7px 10px;
+            border-radius: 8px;
+            background: #ffffff;
+            border: 1px solid var(--c-borde);
+            box-shadow: 0 6px 14px -10px rgba(15, 23, 42, 0.35);
+            font-size: 10px;
+            line-height: 1.5;
+            color: var(--c-suave);
+        }
+
+        .cita-note svg {
+            width: 11px;
+            height: 11px;
+            flex-shrink: 0;
+            margin-top: 2px;
+            color: var(--c-tenue);
+        }
+
+        .cita-note strong { font-weight: 600; color: var(--c-texto); }
+
+        .cita-note .aviso-icon {
+            width: 13px;
+            height: 13px;
+            margin-top: 1px;
+            color: #f59e0b;
+        }
+
+        .aviso-importante {
+            display: inline-block;
+            font-size: 8.5px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: #dc2626;
+        }
+
+        /* ===== Historial plegable ===== */
+        .cita-toggle {
+            width: 100%;
+            padding: 6px 0;
+            background: none;
+            border: 0;
+            font-family: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .cita-toggle:hover h2 { color: var(--c-texto); }
+
+        .cita-toggle-right {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cita-chevron {
+            width: 13px;
+            height: 13px;
+            color: var(--c-tenue);
+            transition: transform 0.3s ease;
+        }
+
+        .cita-toggle[aria-expanded="true"] .cita-chevron { transform: rotate(180deg); }
+
+        .cita-collapse {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.35s ease;
+        }
+
+        .cita-collapse.open { grid-template-rows: 1fr; }
+
+        .cita-collapse-inner {
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .cita-collapse .cita-list { padding: 2px 0 4px; }
+
+        /* ===== Animación de entrada ===== */
+        @keyframes citaAparecer {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        [data-anim] {
+            opacity: 0;
+            animation: citaAparecer 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation-delay: calc(var(--i, 0) * 110ms);
+        }
+
+        @keyframes citaLado {
+            from { opacity: 0; transform: scale(0.6); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        [data-anim] .cita-side svg {
+            opacity: 0;
+            animation: citaLado 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation-delay: calc(var(--i, 0) * 110ms + 250ms);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            [data-anim], [data-anim] .cita-side svg {
+                opacity: 1;
+                animation: none;
+            }
+
+            .cita-meta .hl.green { animation: none; }
+            .cita-collapse { transition: none; }
+        }
+
+        /* ===== Celular / pantallas pequeñas ===== */
+        @media (max-width: 640px) {
+            .user-card h2 { font-size: 14px; }
+            .user-row p { font-size: 12.5px; }
+
+            .cita-section-title h2 {
+                font-size: 11.5px;
+                letter-spacing: 0.02em;
+                white-space: nowrap;
+            }
+
+            .cita-count {
+                font-size: 11px;
+                padding: 2px 9px;
+            }
+
+            .cita-list { gap: 14px; }
+
+            .cita-card { border-radius: 14px; }
+
+            /* Franja lateral más delgada: deja más espacio al contenido */
+            .cita-side {
+                width: 52px;
+                gap: 6px;
+                padding: 14px 2px;
+            }
+
+            .cita-side svg {
+                width: 22px;
+                height: 22px;
+            }
+
+            .cita-side span {
+                font-size: 8px;
+                letter-spacing: 0.03em;
+            }
+
+            .cita-body {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+                padding: 14px 14px 14px;
+            }
+
+            /* Cabecera: chip + "Consultorio" + nombre */
+            .cita-chip {
+                font-size: 10.5px;
+                padding: 2px 8px;
+                margin-bottom: 8px;
+            }
+
+            .cita-chip svg { width: 11px; height: 11px; }
+
+            .cita-label {
+                font-size: 10px;
+                margin-bottom: 1px;
+            }
+
+            .cita-title {
+                font-size: 14px;
+                line-height: 1.3;
+            }
+
+            /* Datos en cuadrícula: etiqueta arriba, valor abajo */
+            .cita-meta {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px 10px;
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px dashed var(--c-borde);
+                font-size: 12.5px;
+                line-height: 1.35;
+            }
+
+            .cita-meta .sep { display: none; }
+
+            .cita-meta .it,
+            .cita-meta .hl {
+                display: grid;
+                grid-template-columns: auto 1fr;
+                align-items: center;
+                column-gap: 4px;
+                row-gap: 2px;
+                white-space: normal;
+                min-width: 0;
+            }
+
+            .cita-meta .lbl {
+                font-size: 10px;
+                font-weight: 500;
+                letter-spacing: 0.03em;
+                text-transform: uppercase;
+            }
+
+            .cita-meta .it:not(.hl) .lbl { grid-column: 1 / -1; }
+
+            .cita-meta strong {
+                grid-column: 1 / -1;
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--c-texto);
+            }
+
+            .cita-meta .hl svg { width: 12px; height: 12px; }
+
+            .cita-meta .hl.green {
+                padding: 6px 8px;
+                border-radius: 8px;
+            }
+
+            .cita-meta .it.medico,
+            .cita-meta .it.lugar { grid-column: 1 / -1; }
+
+            .cita-note { font-size: 11.5px; padding: 8px 11px; }
+            .cita-note .aviso-icon { width: 15px; height: 15px; }
+            .aviso-importante { font-size: 10.5px; }
+
+            .cita-ticket {
+                justify-content: center;
+                width: 100%;
+                padding: 9px 12px;
+                border-radius: 9px;
+                font-size: 12.5px;
+                font-weight: 600;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container header-content">
+            <!-- Logo del hospital y Nombre -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <img src="img/icono.png" alt="Logo Hospital Lima Este - Vitarte" style="width: 36px; height: 36px; object-fit: contain; flex-shrink: 0;">
+                <div>
+                    <span style="font-size: 8px; font-weight: 800; letter-spacing: 0.1em; color: #059669; display: block;">MINSA • PERÚ</span>
+                    <span style="font-size: 11px; font-weight: 800; color: #0f172a; text-transform: uppercase;">Hospital Lima Este - Vitarte</span>
+                </div>
+            </div>
+
+            <!-- Botón Inicio -->
+            <a href="delfos.html" style="text-decoration: none; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 8px; display: flex; align-items: center; gap: 6px; color: #0f172a; font-size: 11px; font-weight: 700; transition: background 0.2s;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Inicio
+            </a>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="user-card" data-anim>
+            <div>
+                <span style="font-size: 8.5px; font-weight: 800; letter-spacing: 0.05em; color: #94a3b8; text-transform: uppercase; display: block;">Paciente Verificado</span>
+                <div class="user-row">
+                    <h2>GUISADO FARFAN GIANCARLO JAVIER</h2>
+                    <p>DNI: <strong>43552295</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aviso (queda fijo al hacer scroll) -->
+        <div class="cita-note" data-anim>
+            <svg class="aviso-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div>Si la atención es en consultorio, pase primero por <strong>Triaje</strong>. Si es en <strong>laboratorio o apoyo al diagnóstico</strong>, vaya directo. <span class="aviso-importante">IMPORTANTE: ACUDIR 30 MINUTOS ANTES.</span></div>
+        </div>
+
+        <!-- SECCIÓN 1: PENDIENTES -->
+        <section class="cita-section">
+            <div class="cita-section-title" data-anim>
+                <h2><span class="dot green"></span>Citas programadas (Pendientes)</h2>
+                <span class="cita-count green">1 Pendiente</span>
+            </div>
+
+            <div class="cita-list">
+
+                <!-- Tarjeta pendiente -->
+                <article class="cita-card" data-anim>
+                    <div class="cita-side green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        <span>Otorgado</span>
+                    </div>
+                    <div class="cita-body">
+                        <div class="cita-info">
+                            <span class="cita-chip pending">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                Faltan 14 días
+                            </span>
+                            <span class="cita-label">Consultorio</span>
+                            <h3 class="cita-title">Cardiología General</h3>
+                            <p class="cita-meta">
+                                <span class="it hl green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="lbl">Fecha:</span> <strong>16 oct, 2026</strong></span> <span class="sep">•</span> <span class="it hl green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="lbl">Hora:</span> <strong>08:30 Hrs.</strong></span> <span class="sep">•</span> <span class="it medico"><span class="lbl">Médico:</span> <strong>Antonieta Valentina Rivadeneyra Solorzano</strong></span> <span class="sep">•</span> <span class="it lugar"><span class="lbl">Lugar:</span> <strong>2do Piso</strong></span>
+                            </p>
+                        </div>
+                        <button class="cita-ticket green">Ver Ticket</button>
+                    </div>
+                </article>
+
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: HISTORIAL -->
+        <section class="cita-section">
+            <button type="button" class="cita-section-title cita-toggle" data-anim aria-expanded="false" aria-controls="historial">
+                <h2><span class="dot"></span>Historial de citas pasadas (Asistidos)</h2>
+                <span class="cita-toggle-right">
+                    <span class="cita-count gray">1 Atención</span>
+                    <svg class="cita-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </span>
+            </button>
+
+            <div class="cita-collapse" id="historial">
+            <div class="cita-collapse-inner">
+            <div class="cita-list">
+
+                <!-- Tarjeta atendida -->
+                <article class="cita-card past" data-anim>
+                    <div class="cita-side past">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
+                        <span>Atendido</span>
+                    </div>
+                    <div class="cita-body">
+                        <div class="cita-info">
+                            <span class="cita-chip success">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                Conclusión Exitosa
+                            </span>
+                            <span class="cita-label">Consultorio</span>
+                            <h3 class="cita-title">Gastroenterología Proc. 1</h3>
+                            <p class="cita-meta">
+                                <span class="it hl gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="lbl">Fecha:</span> <strong>25 set, 2026</strong></span> <span class="sep">•</span> <span class="it hl gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="lbl">Hora:</span> <strong>09:39 Hrs.</strong></span> <span class="sep">•</span> <span class="it medico"><span class="lbl">Médico:</span> <strong>CARLOS TANTA</strong></span> <span class="sep">•</span> <span class="it lugar"><span class="lbl">Lugar:</span> <strong>1er Piso</strong></span>
+                            </p>
+                        </div>
+                        <button class="cita-ticket gray">Ver Ticket</button>
+                    </div>
+                </article>
+
+            </div>
+            </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div>
+                <strong style="color: white; font-weight: 800;">HOSPITAL DE LIMA ESTE – VITARTE</strong>
+                <span style="display: block; color: #94a3b8; font-size: 9.5px; margin-top: 1px;">Carretera Central Km 7.5, Ate - Lima</span>
+            </div>
+            <div style="color: #94a3b8; font-size: 9.5px;">
+                © 2026 Ministerio de Salud • Todos los derechos reservados.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Animación escalonada: cada bloque aparece después del anterior
+        document.querySelectorAll('[data-anim]').forEach((el, i) => el.style.setProperty('--i', i));
+
+        // Historial: ocultar / expandir
+        document.querySelectorAll('.cita-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const abierto = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', String(!abierto));
+                document.getElementById(btn.getAttribute('aria-controls')).classList.toggle('open', !abierto);
+            });
+        });
+
+        // Aviso fijo: se ubica justo debajo del encabezado si este también queda fijo
+        (function () {
+            const header = document.querySelector('header');
+            const aviso = document.querySelector('.cita-note');
+            if (!header || !aviso) return;
+            function ajustar() {
+                const pos = getComputedStyle(header).position;
+                const fijo = pos === 'sticky' || pos === 'fixed';
+                aviso.style.top = (fijo ? header.offsetHeight + 8 : 8) + 'px';
+            }
+            ajustar();
+            window.addEventListener('resize', ajustar);
+        })();
+    </script>
+
+</body>
+</html>

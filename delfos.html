@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Oficial | Hospital Lima Este - Vitarte</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Cloudflare Turnstile: casilla "Verifique que es un ser humano" -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        hospital: {
+                            whatsapp: '#25D366',
+                            dark: '#0b192c',
+                            primary: '#0284c7'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+        }
+
+        .hospital-bg-hero {
+            background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.1)), url('img/hospital.jpeg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .card-modern {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-modern:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 35px -5px rgba(2, 132, 199, 0.15);
+            border-color: #38bdf8;
+        }
+
+        .card-selected-citas {
+            background-color: #fff7ed !important;
+            border-color: #f97316 !important;
+        }
+
+        .card-selected-referencias {
+            background-color: #eff6ff !important;
+            border-color: #3b82f6 !important;
+        }
+
+        .card-selected-whatsapp {
+            background-color: #ecfdf5 !important;
+            border-color: #25D366 !important;
+        }
+
+        /* ===== Títulos de las tarjetas: centrados y con estilo ===== */
+        #card-citas       { --acento: #ea580c; --suave: #ffedd5; }
+        #card-referencias { --acento: #1d4ed8; --suave: #dbeafe; }
+        #card-whatsapp    { --acento: #16a34a; --suave: #dcfce7; }
+
+        /* ===== Fondo decorativo: esquina inferior derecha ===== */
+        .card-modern::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 100% 100%, var(--suave) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .card-modern > * { position: relative; z-index: 1; }
+
+        .card-modern > .card-deco {
+            position: absolute;
+            right: -26px;
+            bottom: -26px;
+            width: 145px;
+            height: 145px;
+            color: var(--acento);
+            opacity: 0.13;
+            transform: rotate(12deg);
+            transition: transform 0.4s ease, opacity 0.4s ease;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .card-deco svg { width: 100%; height: 100%; }
+
+        .card-modern:hover > .card-deco {
+            opacity: 0.2;
+            transform: rotate(4deg) scale(1.08);
+        }
+
+        .card-titulo {
+            margin-top: 4px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: 0.04em;
+            text-wrap: balance;
+            background: linear-gradient(135deg, #0b192c 0%, #1e3a5f 55%, var(--acento) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        @media (min-width: 1024px) {
+            .card-titulo { font-size: 1.25rem; }
+        }
+
+        .card-titulo-linea {
+            display: block;
+            width: 36px;
+            height: 4px;
+            margin: 8px auto 0;
+            border-radius: 999px;
+            background: var(--acento);
+            transition: width 0.3s ease;
+        }
+
+        .card-modern:hover .card-titulo-linea { width: 64px; }
+
+        /* Texto con relieve/borde blanco para resaltar sobre el fondo sin tarjeta */
+        .text-outline-white {
+            text-shadow: 
+                -1px -1px 0 #ffffff,  
+                 1px -1px 0 #ffffff,
+                -1px  1px 0 #ffffff,
+                 1px  1px 0 #ffffff,
+                 0px 4px 12px rgba(255, 255, 255, 0.9);
+        }
+
+        /* Doctor flotante en móvil: se desliza suavemente hacia la tarjeta activa */
+        #floating-doctor-mobile {
+            transition: transform 0.5s cubic-bezier(0.34, 1.3, 0.64, 1);
+            will-change: transform;
+        }
+
+        /* ===== Formulario de consulta ===== */
+        .campo-input {
+            width: 100%;
+            padding: 12px 40px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            font-size: 15px;
+            text-align: center;
+            color: #1e293b;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+
+        .campo-input:focus {
+            border-color: #0891b2;
+            box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15);
+        }
+
+        .campo-input::-webkit-date-and-time-value { text-align: center; }
+
+        /* Campo con error: borde rojo, fondo suave e icono de alerta */
+        .campo-error .campo-input,
+        .campo-error #captchaBox {
+            border-color: #dc2626;
+            background: #fef2f2;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+        }
+
+        .campo-error label { color: #b91c1c; }
+        .campo-error .campo-icono { display: block !important; }
+        .campo-error .campo-msg { display: flex !important; }
+        .campo-error .campo-msg.sin-msg { display: none !important; }
+        .campo-error { animation: sacudir 0.4s ease; }
+
+        #captchaBox {
+            min-height: 65px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes sacudir {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* ===== Modal de error ===== */
+        .error-pop { animation: errorAparecer 0.3s cubic-bezier(0.34, 1.4, 0.64, 1); }
+
+        @keyframes errorAparecer {
+            from { opacity: 0; transform: scale(0.9) translateY(10px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .campo-error, .error-pop { animation: none; }
+        }
+
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-white">
+
+    <!-- Header Superior -->
+    <header class="w-full bg-white border-b border-slate-100 px-4 py-3.5 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <img src="img/icono.png" alt="Logo Hospital Lima Este - Vitarte" class="w-10 h-10 object-contain flex-shrink-0">
+                <div>
+                    <span class="text-[9px] font-extrabold tracking-widest text-cyan-600 uppercase block">MINSA • PERÚ</span>
+                    <span class="text-xs sm:text-sm font-black text-slate-900 tracking-tight">Hospital Lima Este - Vitarte</span>
+                </div>
+            </div>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="#" class="text-xs font-bold text-blue-900 hover:text-cyan-600 transition-colors uppercase tracking-wider">Inicio</a>
+                <a href="#servicios" class="text-xs font-bold text-slate-600 hover:text-cyan-600 transition-colors uppercase tracking-wider">Servicios</a>
+                <button onclick="openWhatsAppModal()" class="text-xs font-bold text-slate-600 hover:text-cyan-600 transition-colors uppercase tracking-wider">Soporte</button>
+            </nav>
+            <div class="md:hidden">
+                <button onclick="toggleMobileMenu()" class="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Menú desplegable en celular -->
+        <nav id="mobileMenu" class="md:hidden hidden max-w-6xl mx-auto mt-3 pt-3 border-t border-slate-100 flex-col gap-1">
+            <a href="#" class="px-3 py-2.5 rounded-xl text-sm font-bold text-blue-900 hover:bg-slate-50">Inicio</a>
+            <a href="#servicios" onclick="toggleMobileMenu()" class="px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50">Servicios</a>
+            <button onclick="toggleMobileMenu(); openWhatsAppModal()" class="text-left px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50">Soporte</button>
+        </nav>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="hospital-bg-hero flex-1 px-4 py-6 flex flex-col justify-center relative overflow-hidden">
+        
+        <!-- Título para Celular -->
+        <div class="block lg:hidden text-center mb-6 max-w-xs mx-auto">
+            <span class="text-[10px] font-extrabold tracking-widest text-cyan-800 bg-white/80 border border-cyan-200 px-3.5 py-1 rounded-full uppercase shadow-sm inline-block mb-2">Plataforma Digital de Salud</span>
+            <h5 class="text-1xl lg:text-1xl font-black text-slate-700 tracking-tight text-outline-white">
+                Consulta de citas y referencias médicas
+            </h5>
+            <p class="text-xs sm:text-sm font-semibold text-slate-700 mt-2 max-w-lg mx-auto text-outline-white">
+                Realiza tus trámites de forma rápida, fácil y segura sin salir de casa. <span class="font-black text-blue-900">¡Selecciona una opción abajo!</span>
+            </p>
+        </div>
+
+        <!-- Título para Escritorio -->
+        <div class="hidden lg:block max-w-3xl mx-auto w-full text-center mb-8">
+            <span class="text-[10px] font-extrabold tracking-widest text-cyan-800 bg-white/80 border border-cyan-200 px-3.5 py-1 rounded-full uppercase shadow-sm inline-block mb-2">Plataforma Digital de Salud</span>
+            <h1 class="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight text-outline-white">
+                Consulta de citas y referencias médicas
+            </h1>
+            <p class="text-xs sm:text-sm font-semibold text-slate-700 mt-2 max-w-lg mx-auto text-outline-white">
+                Realiza tus trámites de forma rápida, fácil y segura sin salir de casa. <span class="font-black text-blue-900">¡Selecciona una opción abajo!</span>
+            </p>
+        </div>
+
+        <!-- Contenedor general -->
+        <div class="max-w-6xl mx-auto w-full relative">
+            
+            <!-- Doctor Flotante Único (Laptop) -->
+            <div id="floating-doctor-desktop" class="absolute left-[-10px] bottom-[-54px] z-20 pointer-events-none hidden lg:block">
+                <img src="img/doctor1.png" alt="Doctor Asistente" class="w-[250px] h-auto object-contain drop-shadow-2xl" onerror="this.src='https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=600&q=80'">
+            </div>
+
+            <!-- Doctor Flotante Único (Móvil: se desliza verticalmente hacia la tarjeta visible al hacer scroll) -->
+            <div id="floating-doctor-mobile" class="absolute left-0 top-0 z-20 pointer-events-none lg:hidden">
+                <img id="floating-doctor-mobile-img" src="img/doctor1.png" alt="Doctor Asistente" class="w-[115px] h-auto object-contain drop-shadow-md" onerror="this.src='https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=600&q=80'">
+            </div>
+
+            <!-- Grilla de tarjetas -->
+            <div id="servicios" class="lg:ml-52 grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+                
+                <!-- 1. Card Citas -->
+                <div class="flex items-center w-full">
+                    <!-- Espacio reservado para el doctor flotante en móvil -->
+                    <div class="block lg:hidden flex-shrink-0 w-[85px]"></div>
+                    <div id="card-citas" class="card-modern hover:border-orange-400 p-4 sm:p-5 cursor-default group flex flex-col items-center text-center justify-between z-10 w-full">
+                        <span class="card-deco" aria-hidden="true"><i data-lucide="calendar-check" stroke-width="1.5"></i></span>
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 sm:w-11 h-10 sm:h-11 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-400 flex items-center justify-center text-white shadow-md shadow-orange-500/25 mb-3">
+                                <i data-lucide="calendar-check" class="w-5 h-5"></i>
+                            </div>
+                            <span class="text-[10px] font-extrabold text-orange-600 uppercase tracking-wider block">Atención Ambulatoria</span>
+                            <h3 class="card-titulo">CONSULTAR MIS CITAS</h3>
+                            <span class="card-titulo-linea"></span>
+                        </div>
+                        <div class="mt-4 pt-2.5 border-t border-slate-100 w-full flex items-center justify-center text-[11px] font-bold text-orange-700">
+                            <button type="button" onclick="selectCard('citas')" class="flex items-center gap-1.5 bg-orange-50 hover:bg-orange-600 focus-visible:ring-orange-500 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
+                                <span>Consultar</span>
+                                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Card Referencias -->
+                <div class="flex items-center w-full">
+                    <!-- Espacio reservado para el doctor flotante en móvil -->
+                    <div class="block lg:hidden flex-shrink-0 w-[85px]"></div>
+                    <div id="card-referencias" class="card-modern hover:border-blue-400 p-4 sm:p-5 cursor-default group flex flex-col items-center text-center justify-between z-10 w-full">
+                        <span class="card-deco" aria-hidden="true"><i data-lucide="file-text" stroke-width="1.5"></i></span>
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 sm:w-11 h-10 sm:h-11 rounded-2xl bg-gradient-to-tr from-blue-800 to-blue-500 flex items-center justify-center text-white shadow-md shadow-blue-500/25 mb-3">
+                                <i data-lucide="file-text" class="w-5 h-5"></i>
+                            </div>
+                            <span class="text-[10px] font-extrabold text-blue-600 uppercase tracking-wider block">Derivaciones MINSA</span>
+                            <h3 class="card-titulo">CONSULTAR REFERENCIAS</h3>
+                            <span class="card-titulo-linea"></span>
+                        </div>
+                        <div class="mt-4 pt-2.5 border-t border-slate-100 w-full flex items-center justify-center text-[11px] font-bold text-blue-700">
+                            <button type="button" onclick="selectCard('referencias')" class="flex items-center gap-1.5 bg-blue-50 hover:bg-blue-600 focus-visible:ring-blue-500 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
+                                <span>Consultar</span>
+                                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Card WhatsApp -->
+                <div class="flex items-center w-full">
+                    <!-- Espacio reservado para el doctor flotante en móvil -->
+                    <div class="block lg:hidden flex-shrink-0 w-[85px]"></div>
+                    <div id="card-whatsapp" class="card-modern p-4 sm:p-5 cursor-default group flex flex-col items-center text-center justify-between hover:border-emerald-400 z-10 w-full">
+                        <span class="card-deco" aria-hidden="true"><svg class="fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg></span>
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 sm:w-11 h-10 sm:h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-[#25D366] flex items-center justify-center text-white shadow-md shadow-emerald-500/25 mb-3">
+                                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                                </svg>
+                            </div>
+                            <span class="text-[10px] font-extrabold text-[#25D366] uppercase tracking-wider block">Soporte WhatsApp</span>
+                            <h3 class="card-titulo">MÁS CONSULTAS</h3>
+                            <span class="card-titulo-linea"></span>
+                        </div>
+                        <div class="mt-4 pt-2.5 border-t border-slate-100 w-full flex items-center justify-center text-[11px] font-bold text-[#25D366]">
+                            <button type="button" onclick="selectCard('whatsapp')" class="flex items-center gap-1.5 bg-emerald-50 hover:bg-[#25D366] focus-visible:ring-emerald-500 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
+                                <span>Abrir chat</span>
+                                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Institucional -->
+    <footer class="w-full bg-[#0b192c] text-slate-300 border-t border-slate-800 px-4 py-6 space-y-4 z-40">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+            <div>
+                <div class="text-xs font-black text-white tracking-wide">
+                    HOSPITAL DE LIMA ESTE – VITARTE
+                </div>
+                <div class="text-[11px] text-slate-400 flex items-center justify-center md:justify-start space-x-1.5 mt-1">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span>Carretera Central Km 7.5, Ate - Lima</span>
+                </div>
+            </div>
+            <div class="text-center md:text-right">
+                <div class="text-[11px] text-slate-400">
+                    © 2026 Ministerio de Salud - Todos los derechos reservados.
+                </div>
+                <div class="text-[10px] text-slate-500 mt-0.5">
+                    Oficina de Estadística y Tecnologías de la Información - OETI
+                </div>
+            </div>
+        </div>
+        <div class="max-w-6xl mx-auto pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-[10px] text-slate-400 gap-2">
+            <span>Plataforma Oficial de Servicios de Salud</span>
+            <div class="font-extrabold tracking-widest text-slate-300">
+                OETI - <span class="text-amber-400">DELFOS</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modales -->
+    <div id="serviceModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-slate-800 relative overflow-hidden">
+            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100">
+                <div class="relative">
+                    <img src="img/doctor_home_mitad.png" alt="Dr. Asistente" class="w-12 h-12 rounded-full object-cover border-2 border-cyan-500 shadow-md bg-slate-900" onerror="this.src='https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=200&q=80'">
+                </div>
+                <div>
+                    <h3 id="modalTitle" class="text-sm font-black text-slate-900">Consultar Cita</h3>
+                    <span class="text-[10px] font-bold text-cyan-600 block">Asistente Médico HLEV</span>
+                </div>
+                <button onclick="closeServiceModal()" class="ml-auto w-7 h-7 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="consultaForm" class="pt-4 space-y-4" novalidate onsubmit="event.preventDefault(); consultarPaciente();">
+                <p id="modalDesc" class="text-xs text-slate-600 leading-relaxed">Hola, por favor ingresa tus datos para verificarlos en el sistema.</p>
+
+                <!-- Número de documento -->
+                <div data-campo="dni">
+                    <label for="modalDniInput" class="block text-sm font-medium text-slate-700 mb-1.5">
+                        Número de documento <span class="text-xs font-normal text-slate-400">(DNI de 8 dígitos)</span>
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="modalDniInput" class="campo-input" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="Ej. 74839201">
+                        <i data-lucide="circle-alert" class="campo-icono hidden absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-red-600"></i>
+                    </div>
+                    <p class="campo-msg hidden items-center gap-1 mt-1.5 text-xs font-semibold text-red-600"></p>
+                </div>
+
+                <!-- Fecha de nacimiento -->
+                <div data-campo="fecha">
+                    <label for="modalFechaInput" class="block text-sm font-medium text-slate-700 mb-1.5">Fecha de nacimiento</label>
+                    <div class="relative">
+                        <!-- Se escribe directo (dd/mm/aaaa); las barras se ponen solas -->
+                        <input type="text" id="modalFechaInput" class="campo-input" inputmode="numeric" autocomplete="bday" maxlength="10" placeholder="dd/mm/aaaa">
+                        <!-- Opcional: botón para abrir el calendario -->
+                        <button type="button" onclick="abrirCalendario()" aria-label="Abrir calendario" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg text-slate-500 hover:text-cyan-700 hover:bg-slate-100 flex items-center justify-center">
+                            <i data-lucide="calendar" class="w-5 h-5"></i>
+                        </button>
+                        <input type="date" id="modalFechaPicker" tabindex="-1" aria-hidden="true" min="1900-01-01" class="absolute left-2 bottom-0 w-8 h-1 opacity-0 pointer-events-none">
+                        <i data-lucide="circle-alert" class="campo-icono hidden absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-red-600 pointer-events-none"></i>
+                    </div>
+                    <p class="campo-msg hidden items-center gap-1 mt-1.5 text-xs font-semibold text-red-600"></p>
+                </div>
+
+                <!-- Verificación Cloudflare -->
+                <div data-campo="captcha">
+                    <div id="captchaBox"></div>
+                    <p id="captchaAviso" class="hidden mt-1 text-[11px] text-slate-500 text-center"></p>
+                    <p class="campo-msg hidden items-center justify-center gap-1 mt-1.5 text-xs font-semibold text-red-600"></p>
+                </div>
+
+                <button type="submit" id="btnConsultar" class="w-full py-3 rounded-xl bg-cyan-600 hover:bg-cyan-700 disabled:bg-slate-400 disabled:cursor-wait text-white text-base font-bold shadow-md shadow-cyan-500/20 flex items-center justify-center gap-2 transition-colors">
+                    <i data-lucide="search" class="w-5 h-5"></i>
+                    <span id="btnConsultarTexto">Consultar</span>
+                </button>
+
+                <button type="button" onclick="closeServiceModal()" class="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-700">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de error: mensaje amigable, sin códigos técnicos -->
+    <div id="errorModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/60 hidden" role="alertdialog" aria-modal="true" aria-labelledby="errorTitulo" aria-describedby="errorDesc">
+        <div class="error-pop bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center">
+            <div id="errorIcono" class="mx-auto w-16 h-16 rounded-full bg-red-50 ring-8 ring-red-50/60 flex items-center justify-center text-red-600"></div>
+            <h3 id="errorTitulo" class="mt-5 text-lg font-black text-slate-900">Revisa tus datos</h3>
+            <p id="errorDesc" class="mt-1.5 text-sm text-slate-600 leading-relaxed"></p>
+            <!-- Figura de los campos con error -->
+            <div id="errorCampos" class="hidden"></div>
+            <button type="button" onclick="cerrarErrorModal()" class="mt-5 w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold transition-colors">
+                <span id="errorBoton">Corregir datos</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="whatsappModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-slate-800 relative overflow-hidden">
+            <div class="flex items-center space-x-3 pb-4 border-b border-slate-100">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 to-[#25D366] flex items-center justify-center text-white shadow-md shadow-emerald-500/25 flex-shrink-0">
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black text-slate-900">Soporte WhatsApp</h3>
+                    <span class="text-[10px] font-bold text-emerald-600 block flex items-center space-x-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                        <span>En línea - HLEV</span>
+                    </span>
+                </div>
+                <button onclick="closeWhatsAppModal()" class="ml-auto w-7 h-7 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="py-4 space-y-3">
+                <div class="p-3.5 rounded-2xl bg-emerald-50 text-emerald-900 text-xs border border-emerald-200 space-y-1.5">
+                    <span class="font-black block text-emerald-800">Hola 👋 ¿Cómo podemos ayudarte?</span>
+                    <p class="text-[11px] text-slate-600 leading-relaxed">Selecciona una de las opciones frecuentes para iniciar tu atención directa por WhatsApp:</p>
+                </div>
+                <div class="space-y-2">
+                    <button onclick="triggerWhatsAppAction('https://wa.me/51900000000?text=Hola,%20deseo%20sacar%20cita%20por%20whatsapp')" class="w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 text-xs font-bold text-slate-700 transition-colors flex items-center justify-between">
+                        <span>Sacar cita por WhatsApp</span>
+                        <i data-lucide="external-link" class="w-3.5 h-3.5 text-emerald-600"></i>
+                    </button>
+                    <button onclick="triggerWhatsAppAction('https://wa.me/51900000000?text=Hola,%20deseo%20sacar%20cita%20presencial')" class="w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 text-xs font-bold text-slate-700 transition-colors flex items-center justify-between">
+                        <span>Sacar cita presencial</span>
+                        <i data-lucide="external-link" class="w-3.5 h-3.5 text-emerald-600"></i>
+                    </button>
+                    <button onclick="triggerWhatsAppAction('https://wa.me/51900000000?text=Hola,%20deseo%20comunicarme%20con%20referencia')" class="w-full text-left p-2.5 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 text-xs font-bold text-slate-700 transition-colors flex items-center justify-between">
+                        <span>Comunicarme con referencia</span>
+                        <i data-lucide="external-link" class="w-3.5 h-3.5 text-emerald-600"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+                <button onclick="closeWhatsAppModal()" class="px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50">Cerrar</button>
+                <button onclick="triggerWhatsAppAction('https://wa.me/51900000000')" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-500/20 hover:bg-emerald-700 flex items-center space-x-1.5">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                    </svg>
+                    <span>Iniciar Chat Directo</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        let activeType = '';
+
+        // ===== Doctor flotante en móvil =====
+        const tarjetasMovil = ['citas', 'referencias', 'whatsapp'];
+        let tarjetaMovilActual = 'citas';
+
+        function esMovil() {
+            return window.innerWidth < 1024;
+        }
+
+        // Mueve el doctor para que quede centrado a la altura de la tarjeta indicada
+        function actualizarDoctorMovil(cardId) {
+            if (!esMovil()) return;
+            const doctor = document.getElementById('floating-doctor-mobile');
+            const card = document.getElementById(`card-${cardId}`);
+            if (!doctor || !card) return;
+
+            tarjetaMovilActual = cardId;
+            const contenedor = doctor.parentElement.getBoundingClientRect();
+            const rect = card.getBoundingClientRect();
+            const centroTarjeta = (rect.top - contenedor.top) + rect.height / 2;
+            const y = centroTarjeta - doctor.offsetHeight / 2;
+            doctor.style.transform = `translateY(${Math.round(y)}px)`;
+        }
+
+        // Elige la tarjeta cuyo centro está más cerca del centro de la pantalla
+        function detectarTarjetaVisible() {
+            if (!esMovil()) {
+                const doctor = document.getElementById('floating-doctor-mobile');
+                if (doctor) doctor.style.transform = '';
+                return;
+            }
+            const centroPantalla = window.innerHeight / 2;
+            let mejor = tarjetaMovilActual;
+            let menorDistancia = Infinity;
+
+            tarjetasMovil.forEach(id => {
+                const rect = document.getElementById(`card-${id}`).getBoundingClientRect();
+                const distancia = Math.abs((rect.top + rect.height / 2) - centroPantalla);
+                if (distancia < menorDistancia) {
+                    menorDistancia = distancia;
+                    mejor = id;
+                }
+            });
+
+            actualizarDoctorMovil(mejor);
+        }
+
+        let scrollPendiente = false;
+        function onScrollMovil() {
+            if (scrollPendiente) return;
+            scrollPendiente = true;
+            requestAnimationFrame(() => {
+                detectarTarjetaVisible();
+                scrollPendiente = false;
+            });
+        }
+
+        window.addEventListener('scroll', onScrollMovil, { passive: true });
+        window.addEventListener('resize', onScrollMovil);
+        window.addEventListener('load', detectarTarjetaVisible);
+        document.getElementById('floating-doctor-mobile-img').addEventListener('load', detectarTarjetaVisible);
+        detectarTarjetaVisible();
+
+        // Al tocar una tarjeta en celular, el doctor se mueve hacia ella
+        tarjetasMovil.forEach(id => {
+            document.getElementById(`card-${id}`).addEventListener('touchstart', () => actualizarDoctorMovil(id), { passive: true });
+        });
+
+        function selectCard(type) {
+            activeType = type;
+
+            document.getElementById('card-citas').classList.remove('card-selected-citas');
+            document.getElementById('card-referencias').classList.remove('card-selected-referencias');
+            document.getElementById('card-whatsapp').classList.remove('card-selected-whatsapp');
+            document.getElementById(`card-${type}`).classList.add(`card-selected-${type}`);
+            actualizarDoctorMovil(type);
+
+            if (type === 'citas') {
+                document.getElementById('modalTitle').innerText = 'Consultar Mis Citas Médicas';
+                document.getElementById('modalDesc').innerText = 'Hola, soy tu asistente. Ingresa tus datos para verificar las citas que tienes programadas en el hospital.';
+            } else if (type === 'referencias') {
+                document.getElementById('modalTitle').innerText = 'Consultar Mis Referencias';
+                document.getElementById('modalDesc').innerText = 'Hola, soy tu asistente. Ingresa tus datos para revisar el estado de tu hoja de referencia.';
+            }
+
+            // El clic abre directamente el formulario
+            if (type === 'whatsapp') openWhatsAppModal();
+            else abrirFormularioConsulta();
+        }
+
+        function closeServiceModal() {
+            document.getElementById('serviceModal').classList.add('hidden');
+            limpiarErrores();
+            document.getElementById('card-citas').classList.remove('card-selected-citas');
+            document.getElementById('card-referencias').classList.remove('card-selected-referencias');
+        }
+
+        function openWhatsAppModal() {
+            document.getElementById('whatsappModal').classList.remove('hidden');
+        }
+
+        function closeWhatsAppModal() {
+            document.getElementById('whatsappModal').classList.add('hidden');
+            document.getElementById('card-whatsapp').classList.remove('card-selected-whatsapp');
+        }
+
+        function triggerWhatsAppAction(url) {
+            window.open(url, '_blank');
+        }
+
+        // =====================================================================
+        //  CONSULTA CON DNI + FECHA DE NACIMIENTO + VERIFICACIÓN CLOUDFLARE
+        // =====================================================================
+
+        // MODO_DEMO = true: no llama al servidor; para la presentación solo
+        // acepta el paciente de prueba. En producción: false y completar API_URL.
+        const MODO_DEMO = true;
+        const API_URL = '';  // Ej.: '/api/pacientes/verificar'
+        const PACIENTE_DEMO = { dni: '43552295', fecha: '1986-02-14' };  // 14/02/1986
+
+        // Clave de PRUEBA de Cloudflare (siempre aprueba). Reemplazar por la clave real del sitio.
+        const TURNSTILE_SITEKEY = '1x00000000000000000000AA';
+
+        // Campos del formulario: nombre visible e icono para la figura del error
+        const CAMPOS = {
+            dni:     { nombre: 'Número de documento',       icono: 'id-card',      input: 'modalDniInput',
+                       pista: 'Revisa que tenga los 8 dígitos correctos' },
+            fecha:   { nombre: 'Fecha de nacimiento',       icono: 'calendar',     input: 'modalFechaInput',
+                       pista: 'Revisa el día, mes y año' },
+            captcha: { nombre: 'Verificación de seguridad', icono: 'shield-check',
+                       pista: 'Marca la casilla de verificación' }
+        };
+
+        // Errores del servidor traducidos a lenguaje simple (nunca se muestra el código)
+        const ERRORES_SERVIDOR = {
+            400: { titulo: 'Revisa tus datos', icono: 'file-warning', campos: ['dni', 'fecha'],
+                   desc: 'Algunos datos no tienen el formato correcto. Revísalos e inténtalo de nuevo.' },
+            401: { titulo: 'Verificación vencida', icono: 'shield-alert', campos: ['captcha'],
+                   desc: 'La verificación de seguridad venció. Vuelve a marcar la casilla e inténtalo otra vez.' },
+            403: { titulo: 'Los datos no coinciden', icono: 'user-x', campos: ['dni', 'fecha'],
+                   desc: 'El número de documento y la fecha de nacimiento no coinciden con nuestros registros. Verifica que estén bien escritos.' },
+            404: { titulo: 'Paciente no encontrado', icono: 'search-x', campos: ['dni'],
+                   desc: 'No encontramos un paciente registrado con este número de documento.' },
+            429: { titulo: 'Demasiados intentos', icono: 'clock', campos: [], boton: 'Entendido',
+                   desc: 'Realizaste muchas consultas seguidas. Espera unos minutos e inténtalo de nuevo.' },
+            red: { titulo: 'Sin conexión', icono: 'wifi-off', campos: [], boton: 'Entendido',
+                   desc: 'No pudimos comunicarnos con el hospital. Revisa tu conexión a internet e inténtalo otra vez.' },
+            general: { titulo: 'Algo salió mal', icono: 'circle-alert', campos: [], boton: 'Entendido',
+                   desc: 'No pudimos completar tu consulta en este momento. Inténtalo nuevamente en unos minutos.' }
+        };
+
+        let captchaToken = null;
+        let captchaWidgetId = null;
+        let captchaNoDisponible = false;
+        let primerCampoConError = null;
+
+        // Fecha máxima permitida: hoy
+        (function () {
+            const hoy = new Date();
+            const iso = new Date(hoy.getTime() - hoy.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+            document.getElementById('modalFechaPicker').max = iso;
+        })();
+
+        // DNI: solo números
+        document.getElementById('modalDniInput').addEventListener('input', e => {
+            e.target.value = e.target.value.replace(/\D/g, '').slice(0, 8);
+            quitarError('dni');
+        });
+
+        // Fecha escrita: solo números y las barras se colocan solas (dd/mm/aaaa)
+        document.getElementById('modalFechaInput').addEventListener('input', e => {
+            const borrando = e.inputType && e.inputType.startsWith('delete');
+            const n = e.target.value.replace(/\D/g, '').slice(0, 8);
+            let v = n;
+            if (n.length > 4) v = `${n.slice(0, 2)}/${n.slice(2, 4)}/${n.slice(4)}`;
+            else if (n.length > 2) v = `${n.slice(0, 2)}/${n.slice(2)}`;
+            // Al escribir el día o el mes completo, agrega la barra al instante
+            if (!borrando && (n.length === 2 || n.length === 4)) v += '/';
+            e.target.value = v;
+            quitarError('fecha');
+        });
+
+        // Convierte "dd/mm/aaaa" a "aaaa-mm-dd"; devuelve null si la fecha no existe
+        function fechaTextoAISO(texto) {
+            const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(texto);
+            if (!m) return null;
+            const [, d, mes, a] = m;
+            const f = new Date(+a, +mes - 1, +d);
+            if (f.getFullYear() !== +a || f.getMonth() !== +mes - 1 || f.getDate() !== +d) return null;
+            return `${a}-${mes}-${d}`;
+        }
+
+        // Calendario opcional: llena el campo de texto con la fecha elegida
+        function abrirCalendario() {
+            const picker = document.getElementById('modalFechaPicker');
+            const iso = fechaTextoAISO(document.getElementById('modalFechaInput').value);
+            if (iso) picker.value = iso;
+            try { picker.showPicker(); } catch (e) { picker.focus(); }
+        }
+
+        document.getElementById('modalFechaPicker').addEventListener('change', e => {
+            if (!e.target.value) return;
+            const [a, m, d] = e.target.value.split('-');
+            document.getElementById('modalFechaInput').value = `${d}/${m}/${a}`;
+            quitarError('fecha');
+        });
+
+        function abrirFormularioConsulta() {
+            document.getElementById('consultaForm').reset();
+            limpiarErrores();
+            document.getElementById('serviceModal').classList.remove('hidden');
+            prepararCaptcha();
+            setTimeout(() => document.getElementById('modalDniInput').focus(), 100);
+        }
+
+        // ----- Cloudflare Turnstile -----
+        function prepararCaptcha(intento = 0) {
+            captchaToken = null;
+            const aviso = document.getElementById('captchaAviso');
+
+            if (!window.turnstile) {
+                if (intento < 20) return setTimeout(() => prepararCaptcha(intento + 1), 250);
+                captchaNoDisponible = true;
+                aviso.textContent = MODO_DEMO
+                    ? 'Verificación de seguridad no disponible (modo demostración).'
+                    : 'No se pudo cargar la verificación de seguridad. Recarga la página.';
+                aviso.classList.remove('hidden');
+                return;
+            }
+
+            if (captchaWidgetId !== null) {
+                turnstile.reset(captchaWidgetId);
+                return;
+            }
+
+            captchaWidgetId = turnstile.render('#captchaBox', {
+                sitekey: TURNSTILE_SITEKEY,
+                language: 'es',
+                theme: 'light',
+                size: 'flexible',
+                callback: token => { captchaToken = token; captchaNoDisponible = false; quitarError('captcha'); },
+                'expired-callback': () => { captchaToken = null; },
+                'error-callback': () => { captchaNoDisponible = true; }
+            });
+        }
+
+        function reiniciarCaptcha() {
+            captchaToken = null;
+            if (window.turnstile && captchaWidgetId !== null) turnstile.reset(captchaWidgetId);
+        }
+
+        // ----- Validación en el navegador -----
+        function validarFormulario() {
+            const errores = [];
+            const dni = document.getElementById('modalDniInput').value.trim();
+            const fecha = document.getElementById('modalFechaInput').value;
+
+            if (!dni) {
+                errores.push({ campo: 'dni', msg: 'Ingresa tu número de DNI.' });
+            } else if (!/^\d{8}$/.test(dni)) {
+                errores.push({ campo: 'dni', msg: 'El DNI debe tener 8 dígitos.' });
+            }
+
+            if (!fecha) {
+                errores.push({ campo: 'fecha', msg: 'Ingresa tu fecha de nacimiento.' });
+            } else if (!/^\d{2}\/\d{2}\/\d{4}$/.test(fecha)) {
+                errores.push({ campo: 'fecha', msg: 'Escribe la fecha completa: día/mes/año (ej. 14/02/1986).' });
+            } else {
+                const iso = fechaTextoAISO(fecha);
+                const d = iso ? new Date(iso + 'T00:00:00') : null;
+                const hoy = new Date();
+                if (!d) {
+                    errores.push({ campo: 'fecha', msg: 'Esa fecha no existe. Revisa el día y el mes.' });
+                } else if (d.getFullYear() < 1900) {
+                    errores.push({ campo: 'fecha', msg: 'La fecha de nacimiento no es válida. Revisa el año.' });
+                } else if (d > hoy) {
+                    errores.push({ campo: 'fecha', msg: 'La fecha de nacimiento no puede ser posterior a hoy.' });
+                }
+            }
+
+            const captchaObligatorio = !(captchaNoDisponible && MODO_DEMO);
+            if (captchaObligatorio && !captchaToken) {
+                errores.push({
+                    campo: 'captcha',
+                    msg: captchaNoDisponible
+                        ? 'No se pudo cargar la verificación de seguridad. Recarga la página.'
+                        : 'Marca la casilla "Verifique que es un ser humano".'
+                });
+            }
+            return errores;
+        }
+
+        // ----- Envío -----
+        async function consultarPaciente() {
+            limpiarErrores();
+
+            const errores = validarFormulario();
+            if (errores.length) {
+                errores.forEach(e => marcarCampo(e.campo, e.msg));
+                mostrarErrorModal({
+                    titulo: errores.length > 1 ? 'Revisa los datos marcados' : 'Revisa este dato',
+                    desc: errores.length > 1 ? 'Hay datos que faltan completar o no son correctos.' : errores[0].msg,
+                    icono: 'circle-alert',
+                    campos: errores,
+                    mostrarMsgEnFila: errores.length > 1
+                });
+                return;
+            }
+
+            const dni = document.getElementById('modalDniInput').value.trim();
+            const fecha = fechaTextoAISO(document.getElementById('modalFechaInput').value);  // aaaa-mm-dd
+
+            setCargando(true);
+            try {
+                const respuesta = await enviarConsulta(dni, fecha, captchaToken);
+                if (respuesta.ok) {
+                    window.location.href = `resultado.html?tipo=${activeType}&dni=${dni}`;
+                    return;
+                }
+                mostrarErrorServidor(respuesta.status);
+            } catch (err) {
+                mostrarErrorServidor('red');
+            } finally {
+                setCargando(false);
+                reiniciarCaptcha();
+            }
+        }
+
+        async function enviarConsulta(dni, fecha, token) {
+            if (MODO_DEMO) {
+                await new Promise(r => setTimeout(r, 700));
+                const coincide = dni === PACIENTE_DEMO.dni && fecha === PACIENTE_DEMO.fecha;
+                return { ok: coincide, status: coincide ? 200 : 403 };
+            }
+            return fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tipo: activeType, dni, fechaNacimiento: fecha, captchaToken: token })
+            });
+        }
+
+        function mostrarErrorServidor(estado) {
+            const info = ERRORES_SERVIDOR[estado] || ERRORES_SERVIDOR.general;
+            const campos = info.campos.map(c => ({ campo: c }));
+            campos.forEach(c => marcarCampo(c.campo));
+            mostrarErrorModal({ ...info, campos });
+        }
+
+        function setCargando(cargando) {
+            const btn = document.getElementById('btnConsultar');
+            btn.disabled = cargando;
+            document.getElementById('btnConsultarTexto').textContent = cargando ? 'Consultando…' : 'Consultar';
+        }
+
+        // ----- Marcado de campos en el formulario -----
+        function marcarCampo(campo, msg) {
+            const caja = document.querySelector(`[data-campo="${campo}"]`);
+            if (!caja) return;
+            caja.classList.remove('campo-error');
+            void caja.offsetWidth; // reinicia la animación
+            caja.classList.add('campo-error');
+            const p = caja.querySelector('.campo-msg');
+            if (p) {
+                p.textContent = msg || '';
+                p.classList.toggle('sin-msg', !msg);
+            }
+            if (!primerCampoConError) primerCampoConError = campo;
+        }
+
+        function quitarError(campo) {
+            const caja = document.querySelector(`[data-campo="${campo}"]`);
+            if (caja) caja.classList.remove('campo-error');
+        }
+
+        function limpiarErrores() {
+            document.querySelectorAll('[data-campo]').forEach(c => c.classList.remove('campo-error'));
+            primerCampoConError = null;
+        }
+
+        // ----- Modal de error -----
+        function mostrarErrorModal({ titulo, desc, icono, campos = [], boton }) {
+            document.getElementById('errorTitulo').textContent = titulo;
+            document.getElementById('errorDesc').textContent = desc;
+            document.getElementById('errorBoton').textContent = boton || (campos.length ? 'Corregir datos' : 'Entendido');
+            document.getElementById('errorIcono').innerHTML = `<i data-lucide="${icono}" class="w-8 h-8"></i>`;
+            document.getElementById('errorCampos').innerHTML = '';
+
+            lucide.createIcons();
+            document.getElementById('errorModal').classList.remove('hidden');
+        }
+
+        function cerrarErrorModal() {
+            document.getElementById('errorModal').classList.add('hidden');
+            // Lleva al paciente al primer campo con error
+            const campo = primerCampoConError && CAMPOS[primerCampoConError];
+            if (campo && campo.input) document.getElementById(campo.input).focus();
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && !document.getElementById('errorModal').classList.contains('hidden')) {
+                cerrarErrorModal();
+            }
+        });
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+            menu.classList.toggle('flex');
+        }
+    </script>
+</body>
+</html>
